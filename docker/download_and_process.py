@@ -400,17 +400,17 @@ def main():
 
     allfiles_dict = allfiles_response.to_dict()['items']
     allfiles_count= allfiles_response.to_dict()['total_item_count']
-    allfiles_endtoken = allfiles_response.to_dict()['last_page_token']
-    logging.info("Initial endtoken = "+allfiles_endtoken)
-    allfiles_nextpagetoken = allfiles_response.to_dict()['next_page_token']
-    logging.info("Initial next_page_token = "+allfiles_nextpagetoken)
 
     if int(allfiles_count) <= 10000:
-        logging.info("Total File Number < 10000 " + allfiles_count)
+        logging.info("Total File Number < 10000 " + str(allfiles_count))
         allfiles_paths=sorted([i['path'] for i in allfiles_dict])
         with open(f'{today}_report_file_list.txt' ,'wt') as fh:
             fh.write('\n'.join(allfiles_paths))
     else:
+        allfiles_endtoken = allfiles_response.to_dict()['last_page_token']
+        logging.info("Initial endtoken = "+allfiles_endtoken)
+        allfiles_nextpagetoken = allfiles_response.to_dict()['next_page_token']
+        logging.info("Initial next_page_token = "+allfiles_nextpagetoken)
         while allfiles_nextpagetoken != "None":
             allfiles_response_n=ICA_SDK.FilesApi(api_client).list_files(volume_name=[args.project_name], 
                                                               path=[f"/{args.pgid}/{today}_report/*"], 
