@@ -389,8 +389,11 @@ def main():
         with open(metafilename, 'at') as fh:            
             for i in fastq_names:
                 mg=re.match('(.{2}-.{2}-.{4}-.{1}-.{2}-.{1})-(.{9})_(.{6}_.{4}(.{4})_.{3})_S\d+_L00(\d)_(R1|R2)',i)
-                fh.write('\t'.join((i,)+mg.groups())+'\n')    
-                sample_id.add(mg.group(1))
+                if (mg is None):
+                    logging.info("Pattern not found"+str(i))
+                else:
+                    fh.write('\t'.join((i,)+mg.groups())+'\n')    
+                    sample_id.add(mg.group(1))
 
         
         # Write complete_list.tsv
@@ -514,7 +517,7 @@ def main():
         allfiles_paths=sorted([i['path'] for i in allfiles_dict])
         with open(f'{today}_report_file_list.txt' ,'wt') as fh:
             fh.write('\n'.join(allfiles_paths))
-            
+
     # #Sort and write all paths to text file
     # allfiles_paths=sorted([i['path'] for i in allfiles_dict])
     # with open(f'{today}_report_file_list.txt' ,'wt') as fh:
