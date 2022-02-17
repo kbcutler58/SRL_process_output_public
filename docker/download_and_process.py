@@ -114,11 +114,30 @@ def filename(s, pgid, today, ext):
 
     return filename
 #%%
-def download_file(i : dict):
-    cmd_args=['curl','-s', i['presigned_url'], '--output', i['name']]        
-    response=subprocess.run(cmd_args, capture_output =True)
-    logging.info(f"Downloading {i['name']} returned with exit code {response.returncode} with stderr: {response.stderr.decode('UTF-8')}")
+# def download_file(i : dict):
+#     cmd_args=['curl','-s', i['presigned_url'], '--output', i['name']]        
+#     response=subprocess.run(cmd_args, capture_output =True)
+#     logging.info(f"Downloading {i['name']} returned with exit code {response.returncode} with stderr: {response.stderr.decode('UTF-8')}")
     
+def download_file(i: dict, retries=3, retry_delay=60):
+    cmd_args=['curl', '-s', i['presigned_url'], '--output', i['name']]        
+    response=subprocess.run(cmd_args, capture_output=True)
+    message = f"Downloading {i['name']} returned with exit code {response.returncode} with stderr: {response.stderr.decode('UTF-8')}"
+    if response.returncode == 0:
+        logging.info(message)
+    elif retries == 0:
+        logging.error(f"{message}, giving up.")
+    else:
+        # Ideally we would resume an incomplete download, but deleting the file should cover all cases.
+        # Additionally, the file may not exist if the curl command failed to download anything, so we ignore failures here.
+        try:
+            os.remove(i['name'])
+        except FileNotFoundError:
+            pass
+        logging.warning(f"{message}, deleting and retrying with delay {retry_delay}s...")
+        sleep(retry_delay)
+        download_file(i, retries=retries-1, retry_delay=retry_delay)
+
 def upload_file(file_name: str, fold_api_response):
     cred=fold_api_response.object_store_access.aws_s3_temporary_upload_credentials
     object_name=os.path.basename(file_name)
@@ -128,7 +147,7 @@ def upload_file(file_name: str, fold_api_response):
     return response
 
 def run_fastqc(fastqfile):
-    response=subprocess.run(['/opt/bin/FastQC/fastqc','-q','-o','fastqc', fastqfile],  capture_output =True)
+    response=subprocess.run(['/opt/bin/FastQC/fastqc','-t 64 ','-q','-o','fastqc', fastqfile],  capture_output =True)
     #response=subprocess.run(['fastqc','-q','-o','fastqc',fastqfile],  capture_output =True)
     logging.info(f"FastQC for {fastqfile} returned with exit code {response.returncode} with stderr: {response.stderr.decode('UTF-8')}")
     
@@ -167,6 +186,7 @@ def main():
     parser.add_argument("--workgroup", dest="workgroup", required=True, help="Workgroup in BSSH")
     parser.add_argument("--runfastqc", dest="runfastqc", required=False, help="Specify 'true' or 'false' on whether to run fastqc",  
                         default='false', choices=['true','false'])
+    parser.add_argument("--date", dest="override_date", required=False, help="Overrideable Date Format YYMMDD" )
     # parser.add_argument("--uniquetsv", dest="uniquetsv", required=False, help="Specify 'true' or 'false' on whether to include run id into tsv file names",  
     #                     default='true', choices=['true','false'])
     # args = parser.parse_args(['--project-name','japaninstrumenttest',
@@ -183,8 +203,12 @@ def main():
     for i in range(len(args.run_id)):
         args.run_id[i]=args.run_id[i].strip()
     
-    today=datetime.today().strftime('%y%m%d')
+    if args.override_date:
+        today = args.override_date
+    else:
+        today=datetime.today().strftime('%y%m%d')
     
+
     p=urllib.parse.urlparse(args.ica_server, 'https')
     netloc=p.netloc or p.path
     newp=urllib.parse.ParseResult(scheme='https',netloc=netloc, path='', params='', query='',fragment='')
@@ -199,6 +223,14 @@ def main():
 
     projects_dict = ICA_SDK.ProjectsApi(api_client).list_projects().to_dict()['items']
     cid=search_cid(projects_dict, args.project_name) #find cid of project
+
+    # Check if project name contains upper case letters, if so reformat for volume name usage
+    upper_check = bool(re.match(r'\w*[A-Z]\w*',args.project_name))
+    if upper_check:
+        logging.info(f'Input Project Name {args.project_name}')
+        args.project_name = args.project_name.strip().lower()
+        logging.info(f'Volume Name {args.project_name}')
+
     #Find bssh volume name based on workgroup name
     workgroups_dict = ICA_SDK.WorkgroupsApi(api_client).list_workgroups().to_dict()['items']
     wid=search_wid(workgroups_dict, args.workgroup)
