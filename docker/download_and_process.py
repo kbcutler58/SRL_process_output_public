@@ -191,7 +191,7 @@ def main():
     #                     default='true', choices=['true','false'])
     # args = parser.parse_args(['--project-name','japaninstrumenttest',
     #                     '--run-id','211105_M02021_0243_123456789, 211117_M02021_0245_123456789',
-    #                     '--api-key','cWdeSSBqrbmS*URdS$Bt6R',
+    #                     '--api-key','',
     #                     '--pgid', 'PG3004',
     # 						'--ica-server', 'https://apn1.platform.illumina.com',
     # 						'--ica-domain', 'ilmn-prod-apjdev',
