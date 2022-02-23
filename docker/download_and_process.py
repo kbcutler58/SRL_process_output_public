@@ -299,6 +299,11 @@ def main():
         if len(fastq_list) != len(fastq_set):
             fastq_path_list=list([i['path'] for i in fastq_dict])
             logging.warning(fastq_path_list)
+            #Reestablish API client
+            api_client=create_api_client(host = args.ica_server,domain=args.ica_domain,x_api_key=args.api_key)
+            #Revert acl
+            ICA_SDK.FoldersApi(api_client).update_folder(bsshvolume_id, body=ICA_SDK.FolderUpdateRequest(acl=old_acl))
+            logging.info(f"{bsshvolume} folder acl reverted")
             raise Exception("Multiple FASTQ Analysis detected for "+f"{run_id}")
         else: 
             logging.info("Single FASTQ Analysis Folder "+f"{run_id}")           
