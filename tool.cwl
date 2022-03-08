@@ -8,7 +8,7 @@ $namespaces:
 cwlVersion: cwl:v1.0
 class: CommandLineTool
 bb:toolVersion: '1'
-label: jsia_SRL_downloadprocess
+label: kcutler_SRL_downloadprocess
 inputs:
   run_id:
     type: string
@@ -54,9 +54,19 @@ inputs:
     inputBinding:
       position: 7
       prefix: --runfastqc
+  override_date:
+    type: string
+    inputBinding:
+      position: 8
+      prefix: --date
+  override_cid:
+    type: string
+    inputBinding:
+      position: 9
+      prefix: --cid
 outputs:
   dummyout:
     type: stdout
 baseCommand:
 - python3
-- /opt/project/download_and_process.py
+- /opt/project/download_and_process_test.py
