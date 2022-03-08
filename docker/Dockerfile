@@ -22,8 +22,8 @@ RUN pip install boto3
 
 WORKDIR /opt/project/
 
-COPY ../download_and_process.py .
+COPY ../download_and_process_test.py .
 
 #Set an entrypoint.  Entrypoints are commands that are executed by default when someone tries to run the docker image.  
 #Arguments passed to docker image will be passed to the entrypoint by default
-ENTRYPOINT ["python3", "/opt/project/download_and_process.py"]
+ENTRYPOINT ["python3", "/opt/project/download_and_process_test.py"]
