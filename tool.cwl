@@ -55,12 +55,12 @@ inputs:
       position: 7
       prefix: --runfastqc
   override_date:
-    type: string
+    type: string?
     inputBinding:
       position: 8
       prefix: --date
   override_cid:
-    type: string
+    type: string?
     inputBinding:
       position: 9
       prefix: --cid
